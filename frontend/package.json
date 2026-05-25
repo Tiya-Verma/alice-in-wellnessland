@@ -13,6 +13,7 @@
     "@1password/sdk": "^0.4.0",
     "@clerk/nextjs": "^7.0.1",
     "@google/genai": "^1.44.0",
+    "framer-motion": "^12.40.0",
     "mongodb": "^7.1.0",
     "next": "16.1.6",
     "react": "19.2.3",

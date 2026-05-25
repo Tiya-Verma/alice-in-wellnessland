@@ -2,6 +2,7 @@ import { Alice } from "next/font/google";
 import Link from "next/link";
 import JournalEntry from "@/components/JournalEntry";
 import JournalCard from "@/components/JournalCard";
+import { HandWrittenTitle } from "@/components/ui/hand-writing-text";
 
 const alice = Alice({
   subsets: ["latin"],
@@ -381,19 +382,9 @@ export default async function TeaPartyPage() {
         <div className="pond-content">
 
           {/* Title */}
-          <h1
-            style={{
-              fontSize: "3.5rem",
-              fontWeight: 700,
-              color: "#f0f5ec",
-              whiteSpace: "nowrap",
-              textAlign: "center",
-              marginBottom: "1rem",
-              textShadow: "0 2px 8px rgba(0,0,0,0.4)",
-            }}
-          >
-            Down the Rabbit Hole
-          </h1>
+          <div className="[&_*]:!text-[#f0f5ec] drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">
+            <HandWrittenTitle title="Down the Rabbit Hole" subtitle="Write what Wonderland whispers" />
+          </div>
 
           {/* Journal form card */}
           <div className="w-full rounded-2xl border border-[rgba(80,180,80,0.25)] p-4 md:p-6 bg-[rgba(6,28,12,0.62)] backdrop-blur-2xl">

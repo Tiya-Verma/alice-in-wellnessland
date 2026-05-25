@@ -6,4 +6,5 @@ docs/
 login-page.png
 login-check-*.png
 .playwright-mcp/
+graphify-out/
 
