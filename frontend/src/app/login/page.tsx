@@ -1,36 +1,27 @@
 "use client";
 
-import Image from "next/image";
-import { IM_Fell_English } from "next/font/google";
 import { SignInButton } from "@clerk/nextjs";
-
-const imFell = IM_Fell_English({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-im-fell",
-});
 
 export default function LoginPage() {
   return (
-    <main className={`${imFell.variable} login-root`} style={{ fontFamily: "var(--font-im-fell), 'IM Fell English', serif" }}>
+    <main id="main" className="min-h-screen flex items-center justify-center px-6 py-16">
+      <a href="#main" className="skip-link">Skip to content</a>
 
-      {/* ── Centered keyhole image ──────────────────────────── */}
-      <div className="login-keyhole">
-        <Image
-          src="/Untitled_design-4.png"
-          alt="Keyhole to Wonderland"
-          width={700}
-          height={1000}
-          className="login-keyhole-img"
-          priority
-        />
+      <div className="w-full max-w-sm border border-[color:var(--border)] rounded-lg p-8 bg-[color:var(--surface)]">
+        <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
+        <p className="mt-2 text-sm text-[color:var(--text-muted)]">
+          Continue to your wellness companion.
+        </p>
+
+        <SignInButton mode="modal">
+          <button
+            type="button"
+            className="mt-6 w-full px-4 py-3 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] transition-colors"
+          >
+            Sign in
+          </button>
+        </SignInButton>
       </div>
-
-      {/* ── Login button ───────────────────────────────────── */}
-      <SignInButton mode="modal">
-        <button className="login-btn">Login</button>
-      </SignInButton>
     </main>
   );
 }

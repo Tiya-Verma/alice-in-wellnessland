@@ -8,7 +8,7 @@ interface VoiceRecorderProps {
 }
 
 const PROMPTS = [
-  "What happened at work today?",
+  "What happened today?",
   "What's something that felt unclear or confusing?",
   "How did your team interactions feel today?",
   "What's been weighing on you lately?",
@@ -17,12 +17,12 @@ const PROMPTS = [
 ];
 
 export default function VoiceRecorder({ onTranscript, onBack }: VoiceRecorderProps) {
-  const [isRecording, setIsRecording]     = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [error, setError]                 = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef        = useRef<BlobPart[]>([]);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   const prompt = useMemo(() => PROMPTS[Math.floor(Math.random() * PROMPTS.length)], []);
 
@@ -34,12 +34,15 @@ export default function VoiceRecorder({ onTranscript, onBack }: VoiceRecorderPro
     const formData = new FormData();
     formData.append("audio", blob, "recording.webm");
     try {
-      const res  = await fetch("/api/transcribe", { method: "POST", body: formData });
+      const res = await fetch("/api/transcribe", { method: "POST", body: formData });
       const data = (await res.json()) as { transcript?: string; error?: string };
-      if (data.transcript) { onTranscript(data.transcript); }
-      else { setError("Couldn't catch that — try again?"); }
+      if (data.transcript) {
+        onTranscript(data.transcript);
+      } else {
+        setError("Couldn't transcribe the audio. Try again?");
+      }
     } catch {
-      setError("Couldn't catch that — try again?");
+      setError("Couldn't transcribe the audio. Try again?");
     } finally {
       setIsTranscribing(false);
     }
@@ -48,15 +51,19 @@ export default function VoiceRecorder({ onTranscript, onBack }: VoiceRecorderPro
   const startRecording = async () => {
     setError(null);
     try {
-      const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-      recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      recorder.onstop = () => { void handleStop(); };
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        void handleStop();
+      };
       mediaRecorderRef.current = recorder;
       recorder.start();
       setIsRecording(true);
     } catch {
-      setError("Mic access denied — please allow microphone permissions.");
+      setError("Microphone access denied. Please allow microphone permissions.");
     }
   };
 
@@ -70,74 +77,63 @@ export default function VoiceRecorder({ onTranscript, onBack }: VoiceRecorderPro
   };
 
   return (
-    <div className="flex flex-col items-center text-center py-8 gap-6">
-      <button onClick={onBack}
-        className="self-start text-[#3a7868] text-xs underline hover:text-[#5a9888] transition-colors">
-        ← back
+    <div className="flex flex-col gap-5">
+      <button
+        type="button"
+        onClick={onBack}
+        className="self-start text-sm underline underline-offset-4 hover:no-underline"
+      >
+        ← Back
       </button>
 
-      {/* Prompt card */}
-      <div className="rounded-2xl px-6 py-4 max-w-sm border border-teal-800/35"
-        style={{ background: "rgba(6,22,18,0.65)" }}>
-        <p className="text-[#5ad0a0] text-xs font-medium uppercase tracking-wide mb-2">
-          Start with this...
+      <div className="border border-[color:var(--border)] rounded-md p-4 bg-[color:var(--surface-muted)]">
+        <p className="text-xs font-medium uppercase tracking-wider text-[color:var(--text-muted)]">
+          Prompt
         </p>
-        <p className="text-[#c8ddd5] text-base leading-relaxed font-medium">
-          &ldquo;{prompt}&rdquo;
-        </p>
-        <p className="text-[#2e6858] text-xs mt-2">
-          Or just talk freely — whatever comes to mind.
+        <p className="mt-2 text-base leading-relaxed">{prompt}</p>
+        <p className="mt-2 text-xs text-[color:var(--text-muted)]">
+          Or talk freely — whatever comes to mind.
         </p>
       </div>
 
-      {/* Idle mic */}
-      {!isRecording && !isTranscribing && (
-        <button
-          onClick={startRecording}
-          className="w-20 h-20 rounded-full text-white text-3xl shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center"
-          style={{ background: "rgba(58,130,100,0.7)", boxShadow: "0 0 28px rgba(58,200,140,0.25)" }}
-          aria-label="Start recording"
-        >
-          🎙️
-        </button>
-      )}
+      <div className="flex items-center gap-4">
+        {!isRecording && !isTranscribing && (
+          <button
+            type="button"
+            onClick={startRecording}
+            className="px-5 py-2.5 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] transition-colors"
+          >
+            Start recording
+          </button>
+        )}
 
-      {/* Recording */}
-      {isRecording && (
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full animate-ping opacity-30"
-              style={{ background: "rgba(58,200,140,0.4)" }} />
+        {isRecording && (
+          <>
             <button
+              type="button"
               onClick={stopRecording}
-              className="relative w-20 h-20 rounded-full text-white text-2xl shadow-lg flex items-center justify-center"
-              style={{ background: "rgba(80,160,120,0.75)" }}
-              aria-label="Stop recording"
+              className="px-5 py-2.5 rounded-md font-medium bg-[color:var(--danger)] text-white hover:opacity-90 transition-opacity"
             >
-              ⏹️
+              Stop recording
             </button>
-          </div>
-          <p className="text-[#7ad8a8] text-sm font-medium animate-pulse">Listening...</p>
-          <p className="text-[#2e6858] text-xs">Tap to stop when you&apos;re done</p>
-        </div>
-      )}
+            <p role="status" aria-live="polite" className="text-sm text-[color:var(--text-muted)]">
+              Listening…
+            </p>
+          </>
+        )}
 
-      {/* Transcribing */}
-      {isTranscribing && (
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-full border border-teal-700/35 flex items-center justify-center text-3xl animate-pulse"
-            style={{ background: "rgba(6,22,18,0.55)" }}>
-            🐱
-          </div>
-          <p className="text-[#5a9888] text-sm">The Cheshire Cat is listening...</p>
-        </div>
-      )}
+        {isTranscribing && (
+          <p role="status" aria-live="polite" className="text-sm text-[color:var(--text-muted)]">
+            Transcribing…
+          </p>
+        )}
+      </div>
 
-      {!isRecording && !isTranscribing && (
-        <p className="text-[#2e6858] text-xs">Tap the mic to begin</p>
+      {error && (
+        <p role="alert" className="text-sm text-[color:var(--danger)]">
+          {error}
+        </p>
       )}
-
-      {error && <p className="text-rose-400 text-xs">{error}</p>}
     </div>
   );
 }

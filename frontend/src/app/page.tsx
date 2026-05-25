@@ -1,115 +1,54 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Cormorant_Garamond } from "next/font/google";
-
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "600", "700"],
-  style: ["normal", "italic"],
-});
 
 const features = [
-  { icon: "🐱", label: "Cheshire Cat", desc: "Voice AI companion" },
-  { icon: "🍵", label: "Tea Party", desc: "Daily journal" },
-  { icon: "🐇", label: "White Rabbit", desc: "Habit tracking" },
-  { icon: "🪞", label: "Looking Glass", desc: "Mood history" },
+  { label: "Voice companion", desc: "Talk through what's on your mind." },
+  { label: "Daily journal", desc: "Track your thoughts and moods." },
+  { label: "Habit tracking", desc: "Build small routines that stick." },
+  { label: "Mood history", desc: "See patterns over time." },
 ];
 
-// Precompute so CSS is valid — no runtime calc(var(--i)) needed
-const rings = [
-  { scale: 0.20, duration: "20s", reverse: false },
-  { scale: 0.35, duration: "26s", reverse: true  },
-  { scale: 0.50, duration: "34s", reverse: false },
-  { scale: 0.65, duration: "44s", reverse: true  },
-  { scale: 0.80, duration: "55s", reverse: false },
-  { scale: 0.96, duration: "68s", reverse: true  },
-];
-
-const particleColors = ["#c084fc", "#f472b6", "#fbbf24", "#e879f9", "#a78bfa"];
-
-const particles = Array.from({ length: 22 }, (_, i) => ({
-  left:     `${(i * 4.6 + 3) % 94}%`,
-  top:      `${(i * 7.3 + 5) % 90}%`,
-  size:     i % 5 === 0 ? 4 : i % 3 === 0 ? 2 : 3,
-  color:    particleColors[i % particleColors.length],
-  twinkle:  `${2.5 + (i % 5) * 0.6}s`,
-  float:    `${6  + (i % 7) * 0.8}s`,
-  delay:    `${(i * 0.35) % 4}s`,
-}));
-
-export default async function Home() {
+export default async function Landing() {
   const { userId } = await auth();
   if (userId) redirect("/home");
+
   return (
-    <main className={`${cormorant.className} landing-root`}>
-      {/* Animated background mesh */}
-      <div className="mesh" aria-hidden />
+    <main id="main" className="min-h-screen flex items-center justify-center px-6 py-16">
+      <a href="#main" className="skip-link">Skip to content</a>
 
-      {/* Rabbit hole vortex */}
-      <div className="vortex" aria-hidden>
-        {rings.map((r, i) => (
-          <div
-            key={i}
-            className="vortex-ring"
-            style={{
-              transform: `scale(${r.scale})`,
-              animation: `vortex-spin ${r.duration} linear infinite`,
-              animationDirection: r.reverse ? "reverse" : "normal",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Floating particles */}
-      <div className="particles" aria-hidden>
-        {particles.map((p, i) => (
-          <span
-            key={i}
-            className="particle"
-            style={{
-              left: p.left,
-              top: p.top,
-              width: p.size,
-              height: p.size,
-              background: p.color,
-              animationDuration: `${p.twinkle}, ${p.float}`,
-              animationDelay: p.delay,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="content">
-        <p className="eyebrow">a wellness journey</p>
-
-        <h1 className="title">
-          Alice in<br />
-          <em>Wellnessland</em>
-        </h1>
-
-        <p className="subtitle">
-          Fall down the rabbit hole of self-discovery.<br />
-          Your AI companion awaits on the other side.
+      <div className="w-full max-w-2xl">
+        <p className="text-sm font-medium uppercase tracking-wider text-[color:var(--accent)] mb-3">
+          A wellness companion
         </p>
 
-        <Link href="/login" className="cta">
-          <span>Follow the White Rabbit</span>
-          <span className="cta-arrow">↓</span>
+        <h1 className="text-4xl sm:text-5xl font-semibold leading-tight tracking-tight">
+          Take a moment for yourself.
+        </h1>
+
+        <p className="mt-4 text-lg text-[color:var(--text-muted)] max-w-prose">
+          A simple, private space to journal, track moods, and reflect with an AI companion.
+        </p>
+
+        <Link
+          href="/login"
+          className="inline-flex items-center gap-2 mt-8 px-5 py-3 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] transition-colors"
+        >
+          Sign in to continue
+          <span aria-hidden>→</span>
         </Link>
 
-        <div className="features">
+        <ul className="mt-12 grid gap-4 sm:grid-cols-2">
           {features.map((f) => (
-            <div key={f.label} className="feature-pill">
-              <span className="feature-icon">{f.icon}</span>
-              <div>
-                <div className="feature-name">{f.label}</div>
-                <div className="feature-desc">{f.desc}</div>
-              </div>
-            </div>
+            <li
+              key={f.label}
+              className="border border-[color:var(--border)] rounded-lg p-4 bg-[color:var(--surface)]"
+            >
+              <p className="font-medium">{f.label}</p>
+              <p className="text-sm text-[color:var(--text-muted)] mt-1">{f.desc}</p>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </main>
   );

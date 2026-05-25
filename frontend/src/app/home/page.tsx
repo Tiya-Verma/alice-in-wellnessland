@@ -1,120 +1,55 @@
-"use client";
-
 import Link from "next/link";
 
-/* ── Playing-card data ───────────────────────────────── */
-const cards = [
-    { suit: "♠", rank: "A", label: "Journal", title: "Down the Rabbit Hole", href: "/tea-party", color: "#1a1a2e", bg: "/journalbg.jpg", hideSuit: true },
-    { suit: "♥", rank: "K", label: "Cheshire Chat", title: "The Looking Glass", href: "/dashboard", color: "#1a1a2e", bg: "/dashboardbg.svg", bgColor: "#d4a0b0", hideSuit: true },
-    { suit: "♦", rank: "Q", label: "Looking Glass", title: "The Queen's Quest", href: "/goals", color: "#1a1a2e", hideSuit: true, centerImg: "/goalsbg.jpg" },
+const sections = [
+    {
+        title: "Journal",
+        description: "Write or speak about your day.",
+        href: "/tea-party",
+    },
+    {
+        title: "Reflections",
+        description: "See insights from recent entries.",
+        href: "/dashboard",
+    },
+    {
+        title: "Goals",
+        description: "Set and track SMART goals.",
+        href: "/goals",
+    },
 ];
 
 export default function HomePage() {
     return (
-        <main className="home-root">
-            {/* ── SVG background ─────────────────────────────── */}
-            <img src="/homebg.svg" alt="" aria-hidden className="home-bg-img" />
+        <main id="main" className="min-h-screen px-6 py-16">
+            <a href="#sections" className="skip-link">Skip to sections</a>
 
-            {/* ── Welcome text ────────────────────────────────── */}
-            <h1
-                style={{
-                    fontFamily: "var(--font-alice), serif",
-                    fontSize: "3.5rem",
-                    fontWeight: 700,
-                    color: "#1a1a2e",
-                    textAlign: "center",
-                    position: "relative",
-                    zIndex: 5,
-                    marginBottom: "0.5rem",
-                }}
-            >
-                Welcome To Alice's Wellnessland!
-            </h1>
-            {/* ── Subtext under title ──────────────────────────── */}
-            <p
-                style={{
-                    fontFamily: "var(--font-alice), serif",
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    color: "#1a1a2e",
-                    textAlign: "center",
-                    position: "relative",
-                    zIndex: 5,
-                    marginBottom: "2rem",
-                }}
-            >
-                Pick your adventure
-            </p>
-            {/* ── Playing cards ──────────────────────────────── */}
-            <div className="home-cards-area">
-                {cards.map((c) => (
-                    <div key={c.suit} className="card-wrapper">
+            <div className="max-w-3xl mx-auto">
+                <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
+                    Welcome back
+                </h1>
+                <p className="mt-2 text-[color:var(--text-muted)]">
+                    Pick where you&apos;d like to start today.
+                </p>
+
+                <nav
+                    id="sections"
+                    aria-label="Main sections"
+                    className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                >
+                    {sections.map((s) => (
                         <Link
-                            href={c.href}
-                            className="playing-card"
-                            style={{
-                                position: "relative",
-                                overflow: "hidden",
-                                backgroundColor: c.bgColor || undefined,
-                            }}
+                            key={s.href}
+                            href={s.href}
+                            className="block border border-[color:var(--border)] rounded-lg p-5 bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors"
                         >
-                            {/* Optional card background image */}
-                            {c.bg && (
-                                <img
-                                    src={c.bg}
-                                    alt=""
-                                    aria-hidden
-                                    style={{
-                                        position: "absolute",
-                                        ...(c.bgColor
-                                            ? {
-                                                inset: 0,
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                                objectPosition: "30% center",
-                                                opacity: 1,
-                                                filter: "brightness(1.15) saturate(1.1)",
-                                            }
-                                            : {
-                                                inset: 0,
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                                opacity: 1,
-                                                filter: "brightness(1.1) saturate(1.05)",
-                                            }),
-                                        pointerEvents: "none",
-                                        zIndex: 0,
-                                    }}
-                                />
-                            )}
-
-                            {/* Centre image (e.g. hourglass) */}
-                            {c.centerImg && (
-                                <img
-                                    src={c.centerImg}
-                                    alt=""
-                                    style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                        objectPosition: "center",
-                                        opacity: 0.9,
-                                        filter: "brightness(1.1) saturate(1.05)",
-                                        pointerEvents: "none",
-                                        zIndex: 0,
-                                    }}
-                                />
-                            )}
+                            <p className="font-medium text-lg">{s.title}</p>
+                            <p className="mt-1 text-sm text-[color:var(--text-muted)]">
+                                {s.description}
+                            </p>
                         </Link>
-                        <p className="card-title">{c.title}</p>
-                    </div>
-                ))}
+                    ))}
+                </nav>
             </div>
-
         </main>
     );
 }

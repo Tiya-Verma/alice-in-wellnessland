@@ -1,594 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-}
+  color-scheme: light;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  --bg: #f8f9f4;
+  --surface: #ffffff;
+  --surface-muted: #eef2e8;
+  --surface-soft: #f1ede5;
+  --border: #d8ddd0;
+  --border-strong: #9aa896;
+  --text: #1f2823;
+  --text-muted: #5a665d;
+  --accent: #3d6e4a;
+  --accent-hover: #2e5638;
+  --accent-soft: #e2ece1;
+  --accent-contrast: #ffffff;
+  --danger: #a33a3a;
+  --success: #3d6e4a;
+  --focus: #3d6e4a;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* ─── Landing Page ──────────────────────────────────────────── */
-
-.landing-root {
-  position: relative;
-  min-height: 100vh;
-  background: #06050e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  color: #f0ecff;
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.55;
 }
 
-.mesh {
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:where(a, button, input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-link {
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 20%, #1a0a3e 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 80%, #1f0a2e 0%, transparent 60%),
-    radial-gradient(ellipse 50% 50% at 50% 50%, #0d0720 0%, transparent 70%);
-  animation: mesh-drift 12s ease-in-out infinite alternate;
-}
-
-@keyframes mesh-drift {
-  from {
-    opacity: 0.8;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1.06);
-  }
-}
-
-/* Vortex */
-.vortex {
-  position: absolute;
-  width: 700px;
-  height: 700px;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-  pointer-events: none;
-}
-
-.vortex-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  transform-origin: center;
-}
-
-@keyframes vortex-spin {
-  from {
-    rotate: 0deg;
-  }
-
-  to {
-    rotate: 360deg;
-  }
-}
-
-/* Particles */
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.particle {
-  position: absolute;
-  border-radius: 50%;
-  animation-name: twinkle, float-up;
-  animation-iteration-count: infinite;
-  animation-direction: alternate;
-  animation-timing-function: ease-in-out;
-}
-
-@keyframes twinkle {
-  0% {
-    opacity: 0;
-  }
-
-  60% {
-    opacity: 0.9;
-  }
-
-  100% {
-    opacity: 0.1;
-  }
-}
-
-@keyframes float-up {
-  from {
-    transform: translateY(0) scale(1);
-  }
-
-  to {
-    transform: translateY(-28px) scale(1.3);
-  }
-}
-
-/* Content */
-.content {
-  position: relative;
-  z-index: 10;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  animation: fade-up 0.9s ease both;
-}
-
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.eyebrow {
-  font-size: 0.82rem;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: #a78bfa;
-  font-weight: 400;
-  animation: fade-up 0.9s 0.1s ease both;
-}
-
-.title {
-  font-size: clamp(3.2rem, 9vw, 6.5rem);
-  font-weight: 300;
-  line-height: 1.05;
-  color: #f5f0ff;
-  animation: fade-up 0.9s 0.2s ease both;
-}
-
-.title em {
-  font-style: italic;
-  font-weight: 700;
-  background: linear-gradient(135deg, #c084fc 0%, #f472b6 50%, #fbbf24 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.subtitle {
-  font-size: clamp(1rem, 2.2vw, 1.3rem);
-  color: #b8aed4;
-  font-weight: 300;
-  line-height: 1.75;
-  max-width: 40ch;
-  animation: fade-up 0.9s 0.35s ease both;
-}
-
-/* CTA */
-.cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  margin-top: 0.5rem;
-  padding: 0.85rem 2.2rem;
-  border-radius: 100px;
-  background: linear-gradient(135deg, #7c3aed, #be185d);
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  left: 1rem;
+  top: -100px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
   text-decoration: none;
-  box-shadow: 0 0 32px rgba(139, 92, 246, 0.55), 0 0 64px rgba(139, 92, 246, 0.2);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-  animation: fade-up 0.9s 0.5s ease both;
-}
-
-.cta:hover {
-  box-shadow: 0 0 48px rgba(139, 92, 246, 0.75), 0 0 96px rgba(139, 92, 246, 0.35);
-  transform: translateY(-2px);
-}
-
-.cta-arrow {
-  display: inline-block;
-  animation: bounce-down 1.6s ease-in-out infinite;
-}
-
-@keyframes bounce-down {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(5px);
-  }
-}
-
-/* Feature pills */
-.features {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.7rem;
-  margin-top: 0.75rem;
-  max-width: 580px;
-  animation: fade-up 0.9s 0.7s ease both;
-}
-
-.feature-pill {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  padding: 0.5rem 1rem;
-  border-radius: 100px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(168, 85, 247, 0.22);
-  backdrop-filter: blur(8px);
-  transition: background 0.2s, border-color 0.2s;
-}
-
-.feature-pill:hover {
-  background: rgba(168, 85, 247, 0.12);
-  border-color: rgba(168, 85, 247, 0.5);
-}
-
-.feature-icon {
-  font-size: 1rem;
-}
-
-.feature-name {
-  font-size: 0.82rem;
   font-weight: 600;
-  color: #e9e3ff;
-  line-height: 1.2;
+  z-index: 1000;
+  transition: top 0.15s ease;
 }
 
-.feature-desc {
-  font-size: 0.7rem;
-  color: #8b7fb0;
-  line-height: 1.2;
+.skip-link:focus {
+  top: 1rem;
 }
 
-/* ─── Login Page ─────────────────────────────────────────────── */
-
-.login-root {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #000000;
-}
-
-/* ── Centered keyhole ──────────────────────────────── */
-.login-keyhole {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  transform: translateX(-30px);
-  animation: keyhole-fade-in 1.2s ease-out both;
-}
-
-/* Radial glow behind the keyhole */
-.login-keyhole::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 110%;
-  height: 110%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(126, 200, 227, 0.35) 0%,
-    rgba(140, 120, 220, 0.20) 30%,
-    rgba(100, 80, 180, 0.08) 55%,
-    transparent 75%
-  );
-  filter: blur(30px);
-  z-index: -1;
-  animation: glow-pulse 4s ease-in-out infinite alternate;
-}
-
-@keyframes glow-pulse {
-  from { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-  to   { opacity: 1;   transform: translate(-50%, -50%) scale(1.08); }
-}
-
-.login-keyhole-img {
-  width: auto !important;
-  height: clamp(320px, 55vh, 560px) !important;
-  object-fit: contain;
-  filter: drop-shadow(0 0 60px rgba(126, 200, 227, 0.25))
-         drop-shadow(0 0 120px rgba(140, 120, 220, 0.15));
-}
-
-@keyframes keyhole-fade-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ── Login button ─────────────────────────────────── */
-.login-btn {
-  position: relative;
-  z-index: 0;
-  margin-top: 0.8rem;
-  transform: translateX(0px);
-  padding: 0.65rem 2.8rem;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #0a0a0a;
-  background: #7ec8e3;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(126, 200, 227, 0.35);
-  animation: login-btn-in 0.8s 0.6s ease-out both;
-}
-
-.login-btn:hover {
-  background: #9ad5ec;
-  box-shadow: 0 6px 32px rgba(126, 200, 227, 0.5);
-  transform: translateY(-2px);
-}
-
-.login-btn:active {
-  transform: translateY(0);
-  background: #6bbdd9;
-}
-
-@keyframes login-btn-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ─── Home / Dashboard Page ────────────────────────────────────── */
-
-.home-root {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #fff;
-}
-
-/* ── Background image ──────────────────────────────── */
-.home-bg-img {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: cover;
-  object-position: center;
-  opacity: 0.8;
-}
-
-/* ── Roses overlay ─────────────────────────────────── */
-.home-roses {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.home-rose {
-  position: absolute;
-  line-height: 1;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.15));
-}
-
-/* ── Playing Cards area ────────────────────────────── */
-.home-cards-area {
-  position: relative;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  padding: 2rem;
-}
-
-/* ── Card wrapper (card + title) ────────────────────── */
-
-.card-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.card-title {
-  font-family: var(--font-alice), serif;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1a1a2e;
-  text-align: center;
-  position: relative;
-  z-index: 5;
-}
-
-/* ── Individual Playing Card ───────────────────────── */
-.playing-card {
-  position: relative;
-  width: 220px;
-  height: 320px;
-  background: transparent;
-  border: 4px solid #1a1a2e;
-  border-radius: 14px;
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  color: inherit;
-  box-shadow:
-    0 8px 32px rgba(0,0,0,0.15),
-    0 2px 6px rgba(0,0,0,0.08),
-    inset 0 0 0 1px rgba(255,255,255,0.8);
-  transition: transform 0.35s cubic-bezier(0.22,0.61,0.36,1),
-              box-shadow 0.35s ease;
-  cursor: pointer;
-  animation: card-deal 0.7s cubic-bezier(0.22,0.61,0.36,1) both;
-  transform-style: preserve-3d;
-}
-
-.playing-card:hover {
-  transform: translateY(-16px) scale(1.05) !important;
-  box-shadow:
-    0 24px 60px rgba(232,101,122,0.25),
-    0 8px 20px rgba(0,0,0,0.12),
-    inset 0 0 0 1px rgba(255,255,255,0.9);
-}
-
-.playing-card:active {
-  transform: translateY(-8px) scale(1.02) !important;
-}
-
-@keyframes card-deal {
-  from {
-    opacity: 0;
-    transform: translateY(80px) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Card corners */
-.card-corner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  line-height: 1;
-  gap: 0;
-}
-
-.card-corner-tl {
-  position: absolute;
-  top: 0.6rem;
-  left: 0.7rem;
-}
-
-.card-corner-br {
-  position: absolute;
-  bottom: 0.6rem;
-  right: 0.7rem;
-  transform: rotate(180deg);
-}
-
-.card-rank {
-  font-size: 1.6rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.card-suit-sm {
-  font-size: 1.1rem;
-  line-height: 1;
-}
-
-/* Card center */
-.card-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-}
-
-.card-suit-lg {
-  font-size: 7rem;
-  line-height: 1;
-  filter: drop-shadow(0 3px 6px rgba(232,101,122,0.3));
-}
-
-/* ── Responsive ────────────────────────────────────── */
-@media (max-width: 900px) {
-  .home-cards-area {
-    gap: 1.2rem;
-  }
-  .playing-card {
-    width: 170px;
-    height: 260px;
-  }
-  .card-suit-lg {
-    font-size: 3.8rem;
-  }
-}
-
-@media (max-width: 520px) {
-  .home-cards-area {
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  .playing-card {
-    width: 200px;
-    height: 290px;
-  }
-}
-
-/* ── Centre Clerk sign-in modal ───────────────────── */
-.cl-modalBackdrop {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.cl-modalContent {
-  margin: auto !important;
-  position: relative !important;
-  top: auto !important;
-  left: auto !important;
-  transform: none !important;
 }

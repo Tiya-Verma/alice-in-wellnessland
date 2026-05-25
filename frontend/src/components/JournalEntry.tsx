@@ -56,77 +56,72 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
   };
 
   return (
-    <section>
-      <h2 className="text-2xl font-semibold text-[#dde8e0] mb-1 text-center">
-        🍵 Today&apos;s Entry
-      </h2>
-      <p className="text-[#5a9888] text-sm mb-5 text-center">
+    <div>
+      <h2 className="text-xl font-semibold">Today&apos;s entry</h2>
+      <p className="mt-1 text-sm text-[color:var(--text-muted)]">
         What&apos;s on your mind today?
       </p>
 
-      {/* ─── Result card ─── */}
       {result ? (
-        <>
-          <div className="rounded-2xl p-5 mt-4 border border-green-500/25"
-            style={{ background: "rgba(6,28,12,0.62)" }}>
-            <p className="text-[#7acc70] font-medium text-xs uppercase tracking-wide mb-3">
-              The Cheshire Cat hears you 🐱
+        <div className="mt-5 space-y-4">
+          <div className="border border-[color:var(--border)] rounded-md p-4 bg-[color:var(--accent-soft)]">
+            <p className="text-xs font-medium uppercase tracking-wider text-[color:var(--accent)]">
+              Reflection
             </p>
-            <div>
-              <p className="text-[#4a9858] text-xs">You&apos;re feeling</p>
-              <p className="text-[#c8ddd5] text-sm leading-relaxed mt-0.5">{result.validation}</p>
+
+            <div className="mt-3">
+              <p className="text-xs text-[color:var(--text-muted)]">You&apos;re feeling</p>
+              <p className="mt-0.5 text-sm leading-relaxed">{result.validation}</p>
             </div>
+
             {result.clarity && (
               <div className="mt-3">
-                <p className="text-[#4a9858] text-xs">A thought to consider</p>
-                <p className="text-[#c8ddd5] text-sm leading-relaxed mt-0.5">{result.clarity}</p>
+                <p className="text-xs text-[color:var(--text-muted)]">A thought to consider</p>
+                <p className="mt-0.5 text-sm leading-relaxed">{result.clarity}</p>
               </div>
             )}
+
             <div className="mt-3">
-              <p className="text-[#4a9858] text-xs">Remember</p>
-              <p className="italic text-[#e8a0bf] text-sm mt-0.5">{result.affirmation}</p>
+              <p className="text-xs text-[color:var(--text-muted)]">Remember</p>
+              <p className="mt-0.5 text-sm italic">{result.affirmation}</p>
             </div>
           </div>
+
           <button
+            type="button"
             onClick={handleReset}
-            className="text-[#4a9858] text-xs mt-4 underline hover:text-[#6ab870] transition-colors"
+            className="text-sm font-medium underline underline-offset-4 hover:no-underline"
           >
             Write another entry
           </button>
-        </>
+        </div>
       ) : (
-        <>
-          {/* ─── Pick mode: two big buttons ─── */}
+        <div className="mt-6">
           {mode === "pick" && (
-            <div className="flex justify-center gap-6 my-8">
+            <div className="grid grid-cols-2 gap-4">
               <button
+                type="button"
                 onClick={() => setMode("voice")}
-                className="flex flex-col items-center justify-center gap-3 w-40 h-44 rounded-2xl border transition-all duration-300 hover:scale-105"
-                style={{
-                  background: "rgba(6,28,12,0.55)",
-                  borderColor: "rgba(80,180,80,0.30)",
-                }}
+                className="flex flex-col items-start gap-1 p-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
               >
-                <span className="text-4xl">🎙️</span>
-                <span className="text-[#c8ecc0] text-sm font-medium tracking-wide">Voice</span>
-                <span className="text-[#5a9868] text-xs">Speak your mind</span>
+                <span className="font-medium">Speak</span>
+                <span className="text-sm text-[color:var(--text-muted)]">
+                  Talk freely, we&apos;ll transcribe.
+                </span>
               </button>
               <button
+                type="button"
                 onClick={() => setMode("write")}
-                className="flex flex-col items-center justify-center gap-3 w-40 h-44 rounded-2xl border transition-all duration-300 hover:scale-105"
-                style={{
-                  background: "rgba(6,28,12,0.55)",
-                  borderColor: "rgba(80,180,80,0.30)",
-                }}
+                className="flex flex-col items-start gap-1 p-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
               >
-                <span className="text-4xl">✏️</span>
-                <span className="text-[#c8ecc0] text-sm font-medium tracking-wide">Write</span>
-                <span className="text-[#5a9868] text-xs">Write it out</span>
+                <span className="font-medium">Write</span>
+                <span className="text-sm text-[color:var(--text-muted)]">
+                  Type at your own pace.
+                </span>
               </button>
             </div>
           )}
 
-          {/* ─── Voice ─── */}
           {mode === "voice" && (
             <VoiceRecorder
               onTranscript={(text) => { setContent(text); setMode("write"); }}
@@ -134,72 +129,50 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
             />
           )}
 
-          {/* ─── Write ─── */}
           {mode === "write" && (
-            <form onSubmit={handleSubmit} className="flex flex-col items-center gap-5">
-              {/* Back button — left-aligned full width */}
-              <div className="w-full">
-                <button
-                  type="button"
-                  onClick={() => setMode("pick")}
-                  className="text-[#5a9868] text-xs underline hover:text-[#7acc88] transition-colors"
-                >
-                  ← back
-                </button>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <button
+                type="button"
+                onClick={() => setMode("pick")}
+                className="self-start text-sm underline underline-offset-4 hover:no-underline"
+              >
+                ← Back
+              </button>
+
+              <fieldset>
+                <legend className="text-sm font-medium mb-2">
+                  How are you feeling right now?
+                </legend>
+                <MoodRating value={moodRating} onChange={setMoodRating} />
+              </fieldset>
+
+              <div>
+                <label htmlFor="journal-content" className="block text-sm font-medium mb-1.5">
+                  Your entry
+                </label>
+                <textarea
+                  id="journal-content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write freely — this is just for you. What happened today? What felt hard?"
+                  rows={8}
+                  className="w-full border border-[color:var(--border)] bg-[color:var(--bg)] rounded-md p-3 text-sm leading-relaxed resize-none"
+                  required
+                  minLength={10}
+                />
               </div>
 
-              {/* Mood rating — centered */}
-              <div className="w-full text-center">
-                <p className="text-[#6ab870] text-sm mb-3">How are you feeling right now?</p>
-                <div className="flex justify-center">
-                  <MoodRating value={moodRating} onChange={setMoodRating} />
-                </div>
-              </div>
-
-              {/* Textarea — full width */}
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write freely — this is just for you. What happened today? What are you confused about? What felt hard? There are no wrong answers."
-                className="w-full min-h-32 rounded-xl border p-4 resize-none text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-green-500/30 transition-colors"
-                style={{
-                  background: "rgba(4,20,8,0.55)",
-                  borderColor: "rgba(80,180,80,0.28)",
-                  color: "#dde8d8",
-                  caretColor: "#7acc70",
-                }}
-              />
-
-              {/* Submit button — centered */}
               <button
                 type="submit"
                 disabled={isSubmitting || content.trim().length < 10}
-                className="rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 border"
-                style={{
-                  background: "rgba(18,80,25,0.60)",
-                  borderColor: "rgba(80,200,80,0.40)",
-                  color: "#c8ecc0",
-                }}
+                className="self-start px-5 py-2.5 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                      fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10"
-                        stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Thinking...
-                  </>
-                ) : (
-                  "Share with the Cheshire Cat →"
-                )}
+                {isSubmitting ? "Submitting…" : "Submit entry"}
               </button>
             </form>
           )}
-        </>
+        </div>
       )}
-    </section>
+    </div>
   );
 }
