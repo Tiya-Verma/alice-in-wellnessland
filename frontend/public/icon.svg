@@ -1,0 +1,13 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="96" fill="#3d6e4a"/>
+  <text
+    x="256"
+    y="356"
+    font-size="320"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-style="italic"
+    font-weight="600"
+    text-anchor="middle"
+    fill="#f8f9f4"
+  >A</text>
+</svg>

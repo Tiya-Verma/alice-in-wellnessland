@@ -46,9 +46,22 @@ We also gained experience working with the Gemini API across different modalitie
 
 Beyond the technical skills, we learned a lot about collaboration, debugging complex integration issues, and staying patient when things do not work the first time.
 
-## What’s Next for Alice in Wellnessland
-### Privacy & Encryption
-Our secrets pipeline is already secured via the 1Password TypeScript SDK, ensuring API keys are never stored in plaintext. The next step is extending that trust to users' most vulnerable data: encrypting journal entries before they are stored in MongoDB Atlas, so that even at the database level, personal thoughts remain private and unreadable to anyone but the user.
+## Security & Encryption
+
+Journal entries are encrypted on the user's device before they ever reach our servers. Each user picks a journal passphrase that never leaves the browser; we run it through PBKDF2-SHA256 (600,000 iterations) against a per-user salt to derive an AES-GCM-256 key. That key encrypts the entry content client-side; the server stores only the ciphertext + initialization vector.
+
+We're honest about the trade-offs:
+
+- **What's encrypted**: the raw entry content (text and voice transcripts). MongoDB sees only ciphertext.
+- **What's not encrypted**: the AI-derived analysis fields (mood, mood score, validation, clarity, affirmation) and the embedding vector. We chose to keep these in the clear so dashboard insights and semantic search continue to work. This leaks coarse emotional metadata in exchange for product functionality.
+- **AI analysis is transient**: when you submit an entry, the plaintext is sent over TLS to a stateless Next.js API route that calls Gemini and immediately returns the analysis. The route does not log or persist content.
+- **Lose your passphrase, lose your entries**: there is no recovery path. The server cannot decrypt your data — that is the entire point.
+
+API keys themselves remain managed by the 1Password TypeScript SDK so credentials never sit in plaintext env files.
+
+## What's Next for Alice in Wellnessland
+### Argon2id key derivation
+PBKDF2 is the pragmatic Web-Crypto-built-in choice; Argon2id (via `@noble/hashes/argon2`) is the modern best practice and would be a drop-in upgrade.
 
 ### Momentum & Streaks
 A consistency tracking system that rewards users for showing up for themselves every day, celebrating journaling streaks and milestones to make wellness a habit, not just a moment.

@@ -2,14 +2,14 @@ import Link from "next/link";
 
 const sections = [
     {
+        title: "Daily check-in",
+        description: "A one-screen ritual — mood, a few words, a touch on your goals.",
+        href: "/checkin",
+    },
+    {
         title: "Journal",
         description: "Write or speak about your day.",
         href: "/tea-party",
-    },
-    {
-        title: "Reflections",
-        description: "See insights from recent entries.",
-        href: "/dashboard",
     },
     {
         title: "Goals",

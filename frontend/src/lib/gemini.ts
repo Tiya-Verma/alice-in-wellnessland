@@ -53,9 +53,14 @@ const FALLBACK_ANALYSIS: JournalAnalysis = {
 };
 
 export async function analyzeJournalEntry(
-  transcribedText: string
+  transcribedText: string,
+  contextSummary?: string
 ): Promise<JournalAnalysis> {
-  const systemPrompt = `You are a warm, wise AI companion for a co-op intern navigating their first tech job. You speak like a caring mentor — never clinical, never dismissive. Analyze this journal entry and return ONLY valid JSON with: mood (one word emotion), moodScore (1-10, 10=happiest), validation (1 sentence acknowledging their feelings without toxic positivity), clarity (1-2 sentence practical suggestion — e.g. how to communicate with their tech lead, how to frame a question, how to approach an unclear ticket), affirmation (1 warm encouraging sentence, can reference Alice in Wonderland characters subtly — Cheshire Cat, Caterpillar's 'Who are you?', etc.). Only return valid JSON, nothing else.`;
+  const basePrompt = `You are a warm, wise AI companion for a co-op intern navigating their first tech job. You speak like a caring mentor — never clinical, never dismissive. Analyze this journal entry and return ONLY valid JSON with: mood (one word emotion), moodScore (1-10, 10=happiest), validation (1 sentence acknowledging their feelings without toxic positivity), clarity (1-2 sentence practical suggestion — e.g. how to communicate with their tech lead, how to frame a question, how to approach an unclear ticket; when relevant you may gently reference a recent mood trend or a dormant goal from the context below), affirmation (1 warm encouraging sentence, can reference Alice in Wonderland characters subtly — Cheshire Cat, Caterpillar's 'Who are you?', etc.). Only return valid JSON, nothing else.`;
+
+  const systemPrompt = contextSummary
+    ? `${basePrompt}\n\nWhat you know about the user (use sparingly, only if it makes the response feel more seen):\n${contextSummary}`
+    : basePrompt;
 
   try {
     const genAI = await getGeminiFlash();

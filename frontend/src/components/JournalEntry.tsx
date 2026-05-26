@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MoodRating from "./MoodRating";
 import VoiceRecorder from "./VoiceRecorder";
+import { encryptString } from "@/lib/crypto";
 
 interface JournalEntryResult {
   id: string;
@@ -16,10 +17,11 @@ interface JournalEntryResult {
 
 interface JournalEntryProps {
   userId: string;
+  cryptoKey: CryptoKey;
   onEntryCreated?: (entry: JournalEntryResult) => void;
 }
 
-export default function JournalEntry({ userId, onEntryCreated }: JournalEntryProps) {
+export default function JournalEntry({ userId, cryptoKey, onEntryCreated }: JournalEntryProps) {
   const [mode, setMode] = useState<"pick" | "voice" | "write">("pick");
   const [content, setContent] = useState("");
   const [moodRating, setMoodRating] = useState<number | null>(null);
@@ -31,10 +33,11 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
     if (isSubmitting || content.trim().length < 10) return;
     setIsSubmitting(true);
     try {
+      const { ciphertext, iv } = await encryptString(content, cryptoKey);
       const res = await fetch("/api/journal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, content, moodRating }),
+        body: JSON.stringify({ userId, content, ciphertext, iv, moodRating }),
       });
       const data = (await res.json()) as { success: boolean; entry: JournalEntryResult };
       if (data.success) {
@@ -98,11 +101,11 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
       ) : (
         <div className="mt-6">
           {mode === "pick" && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setMode("voice")}
-                className="flex flex-col items-start gap-1 p-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
+                className="flex flex-col items-start gap-1 min-h-[88px] p-5 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
               >
                 <span className="font-medium">Speak</span>
                 <span className="text-sm text-[color:var(--text-muted)]">
@@ -112,7 +115,7 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
               <button
                 type="button"
                 onClick={() => setMode("write")}
-                className="flex flex-col items-start gap-1 p-4 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
+                className="flex flex-col items-start gap-1 min-h-[88px] p-5 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors text-left"
               >
                 <span className="font-medium">Write</span>
                 <span className="text-sm text-[color:var(--text-muted)]">
@@ -165,7 +168,7 @@ export default function JournalEntry({ userId, onEntryCreated }: JournalEntryPro
               <button
                 type="submit"
                 disabled={isSubmitting || content.trim().length < 10}
-                className="self-start px-5 py-2.5 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full sm:w-auto sm:self-start min-h-[44px] px-6 py-3 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? "Submitting…" : "Submit entry"}
               </button>

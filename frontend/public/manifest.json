@@ -1,0 +1,20 @@
+{
+  "name": "Alice in Wellnessland",
+  "short_name": "Wellnessland",
+  "description": "Secure journaling and SMART goal tracking, guided by a wise Wonderland companion.",
+  "start_url": "/home",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9f4",
+  "theme_color": "#3d6e4a",
+  "categories": ["lifestyle", "health", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

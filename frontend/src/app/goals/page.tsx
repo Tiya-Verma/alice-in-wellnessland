@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 
 interface Goal {
   id: string;
@@ -10,6 +11,9 @@ interface Goal {
   checkedCriteria: boolean[];
   completed: boolean;
   createdAt: string;
+  streakDays: number;
+  longestStreak: number;
+  lastCheckInDate: string | null;
 }
 
 interface Message {
@@ -35,7 +39,11 @@ function renderInline(text: string): React.ReactNode {
 }
 
 export default function GoalsPage() {
+  const { user, isLoaded: userLoaded } = useUser();
+  const userId = user?.id;
+
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
   const [view, setView] = useState<"list" | "form" | "detail">("list");
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
 
@@ -53,13 +61,23 @@ export default function GoalsPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("wellness_goals");
-    if (saved) setGoals(JSON.parse(saved));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("wellness_goals", JSON.stringify(goals));
-  }, [goals]);
+    if (!userLoaded) return;
+    if (!userId) {
+      setGoalsLoading(false);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(`/api/goals?userId=${encodeURIComponent(userId)}`);
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.goals)) setGoals(data.goals);
+      } catch (e) {
+        console.error("Failed to load goals", e);
+      } finally {
+        setGoalsLoading(false);
+      }
+    })();
+  }, [userId, userLoaded]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -81,6 +99,10 @@ export default function GoalsPage() {
 
   const handleSubmitGoal = async () => {
     setFormError("");
+    if (!userId) {
+      setFormError("You need to be signed in to create goals.");
+      return;
+    }
     if (!formOverview.trim() || !formStrategies.trim() || !formCriteria.trim()) {
       setFormError("Please fill in all fields.");
       return;
@@ -94,7 +116,7 @@ export default function GoalsPage() {
 
     setFormLoading(true);
     try {
-      const res = await fetch("/api/goals/validate", {
+      const validateRes = await fetch("/api/goals/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,33 +126,42 @@ export default function GoalsPage() {
         }),
       });
 
-      const result = await res.json();
+      const validation = await validateRes.json();
 
-      if (!res.ok) {
-        setFormError(`Error: ${result.error}`);
+      if (!validateRes.ok) {
+        setFormError(`Error: ${validation.error}`);
         setFormLoading(false);
         return;
       }
 
-      if (!result.isSmartGoal || !result.isCriteriaSpecific) {
+      if (!validation.isSmartGoal || !validation.isCriteriaSpecific) {
         setFormError(
-          `Validation failed: ${result.feedback} Please revise your goal to be SMART (Specific, Measurable, Achievable, Relevant, Time-bound) and ensure acceptance criteria are specific.`
+          `Validation failed: ${validation.feedback} Please revise your goal to be SMART (Specific, Measurable, Achievable, Relevant, Time-bound) and ensure acceptance criteria are specific.`
         );
         setFormLoading(false);
         return;
       }
 
-      const newGoal: Goal = {
-        id: Date.now().toString(),
-        overview: formOverview.trim(),
-        strategies: formStrategies.trim(),
-        acceptanceCriteria: criteriaLines,
-        checkedCriteria: criteriaLines.map(() => false),
-        completed: false,
-        createdAt: new Date().toLocaleDateString(),
-      };
+      const createRes = await fetch("/api/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          overview: formOverview.trim(),
+          strategies: formStrategies.trim(),
+          acceptanceCriteria: criteriaLines,
+        }),
+      });
 
-      setGoals((prev) => [newGoal, ...prev]);
+      const createData = await createRes.json();
+
+      if (!createRes.ok) {
+        setFormError(`Error saving goal: ${createData.error}`);
+        setFormLoading(false);
+        return;
+      }
+
+      setGoals((prev) => [createData.goal as Goal, ...prev]);
       resetForm();
       setView("list");
     } catch (e) {
@@ -140,25 +171,58 @@ export default function GoalsPage() {
     }
   };
 
-  const toggleCriterion = (goalId: string, idx: number) => {
+  const toggleCriterion = async (goalId: string, idx: number) => {
+    if (!userId) return;
+    const goal = goals.find((g) => g.id === goalId);
+    if (!goal) return;
+
+    const nextChecked = [...goal.checkedCriteria];
+    nextChecked[idx] = !nextChecked[idx];
+
+    // Optimistic update for snappy UI.
     setGoals((prev) =>
-      prev.map((g) => {
-        if (g.id !== goalId) return g;
-        const checked = [...g.checkedCriteria];
-        checked[idx] = !checked[idx];
-        const completed = checked.every(Boolean);
-        const updated = { ...g, checkedCriteria: checked, completed };
-        if (selectedGoal?.id === goalId) setSelectedGoal(updated);
-        return updated;
-      })
+      prev.map((g) =>
+        g.id === goalId
+          ? { ...g, checkedCriteria: nextChecked, completed: nextChecked.every(Boolean) }
+          : g
+      )
     );
+
+    try {
+      const res = await fetch("/api/goals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, goalId, checkedCriteria: nextChecked }),
+      });
+      const data = await res.json();
+      if (res.ok && data.goal) {
+        setGoals((prev) => prev.map((g) => (g.id === goalId ? (data.goal as Goal) : g)));
+      }
+    } catch (e) {
+      console.error("Failed to update criterion", e);
+    }
   };
 
-  const deleteGoal = (id: string) => {
+  const deleteGoal = async (id: string) => {
+    if (!userId) return;
+    const snapshot = goals;
     setGoals((prev) => prev.filter((g) => g.id !== id));
     if (selectedGoal?.id === id) {
       setSelectedGoal(null);
       setView("list");
+    }
+
+    try {
+      const res = await fetch(
+        `/api/goals?userId=${encodeURIComponent(userId)}&goalId=${encodeURIComponent(id)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        setGoals(snapshot);
+      }
+    } catch (e) {
+      console.error("Failed to delete goal", e);
+      setGoals(snapshot);
     }
   };
 
@@ -175,7 +239,7 @@ export default function GoalsPage() {
         ? `Here are the user's current goals:\n\n${goals
             .map(
               (g, i) =>
-                `Goal ${i + 1}: ${g.overview}\nStrategies: ${g.strategies}\nAcceptance Criteria: ${g.acceptanceCriteria.join("; ")}\nProgress: ${g.checkedCriteria.filter(Boolean).length}/${g.checkedCriteria.length} criteria met\nStatus: ${g.completed ? "Completed" : "In Progress"}`
+                `Goal ${i + 1}: ${g.overview}\nStrategies: ${g.strategies}\nAcceptance Criteria: ${g.acceptanceCriteria.join("; ")}\nProgress: ${g.checkedCriteria.filter(Boolean).length}/${g.checkedCriteria.length} criteria met\nCurrent streak: ${g.streakDays} day(s)\nStatus: ${g.completed ? "Completed" : "In Progress"}`
             )
             .join("\n\n")}`
         : "The user has no goals set yet.";
@@ -195,7 +259,7 @@ export default function GoalsPage() {
       const res = await fetch("/api/goals/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: apiMessages, goalsContext }),
+        body: JSON.stringify({ messages: apiMessages, goalsContext, userId }),
       });
 
       const data = await res.json();
@@ -218,6 +282,7 @@ export default function GoalsPage() {
 
   const activeGoals = goals.filter((g) => !g.completed);
   const finishedGoals = goals.filter((g) => g.completed);
+  const overallStreak = goals.reduce((max, g) => Math.max(max, g.streakDays ?? 0), 0);
 
   return (
     <div className="min-h-screen">
@@ -230,13 +295,20 @@ export default function GoalsPage() {
             <p className="mt-2 text-[color:var(--text-muted)]">
               Track your SMART goals and progress.
             </p>
+            {overallStreak > 0 && (
+              <p className="mt-2 text-sm text-[color:var(--text-muted)]">
+                <span aria-hidden>🔥</span>{" "}
+                <span className="font-medium text-[color:var(--text)]">{overallStreak}-day streak</span>{" "}
+                across your goals
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {view === "list" && (
               <button
                 type="button"
                 onClick={() => { resetForm(); setView("form"); }}
-                className="px-4 py-2 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] transition-colors"
+                className="min-h-[44px] px-4 py-2 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] transition-colors"
               >
                 New goal
               </button>
@@ -320,19 +392,19 @@ export default function GoalsPage() {
                 </div>
               )}
 
-              <div className="flex gap-3 pt-1">
+              <div className="flex flex-col sm:flex-row gap-3 pt-1">
                 <button
                   type="button"
                   onClick={handleSubmitGoal}
                   disabled={formLoading}
-                  className="px-5 py-2.5 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  className="min-h-[44px] px-6 py-3 rounded-md font-medium bg-[color:var(--accent)] text-[color:var(--accent-contrast)] hover:bg-[color:var(--accent-hover)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                 >
                   {formLoading ? "Validating…" : "Submit goal"}
                 </button>
                 <button
                   type="button"
                   onClick={() => { resetForm(); setView("list"); }}
-                  className="px-4 py-2.5 text-sm underline underline-offset-4 hover:no-underline"
+                  className="min-h-[44px] px-4 py-3 text-sm underline underline-offset-4 hover:no-underline"
                 >
                   Cancel
                 </button>
@@ -358,6 +430,16 @@ export default function GoalsPage() {
                   <span className="text-xs text-[color:var(--text-muted)]">
                     Created {selectedGoal.createdAt}
                   </span>
+                  {selectedGoal.streakDays > 0 && (
+                    <span className="text-xs font-medium text-[color:var(--text)]">
+                      <span aria-hidden>🔥</span> {selectedGoal.streakDays}-day streak
+                      {selectedGoal.longestStreak > selectedGoal.streakDays && (
+                        <span className="text-[color:var(--text-muted)] font-normal">
+                          {" "}(best: {selectedGoal.longestStreak})
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </div>
                 <h2 id="detail-heading" className="text-lg font-semibold">
                   {selectedGoal.overview}
@@ -443,95 +525,111 @@ export default function GoalsPage() {
         {/* LIST VIEW */}
         {view === "list" && (
           <div className="space-y-10">
-            <section aria-labelledby="active-heading">
-              <h2
-                id="active-heading"
-                className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-3"
-              >
-                Active goals ({activeGoals.length})
-              </h2>
-              {activeGoals.length === 0 ? (
-                <div className="border border-dashed border-[color:var(--border)] rounded-lg p-8 text-center bg-[color:var(--surface)]">
-                  <p className="text-sm text-[color:var(--text-muted)]">
-                    No active goals yet. Use <span className="font-medium text-[color:var(--text)]">New goal</span> above to create one.
-                  </p>
-                </div>
-              ) : (
-                <ul className="space-y-3 list-none">
-                  {activeGoals.map((goal) => {
-                    const progress =
-                      goal.checkedCriteria.length > 0
-                        ? Math.round(
-                            (goal.checkedCriteria.filter(Boolean).length /
-                              goal.checkedCriteria.length) *
-                              100
-                          )
-                        : 0;
-                    return (
-                      <li key={goal.id}>
-                        <button
-                          type="button"
-                          onClick={() => openGoalDetail(goal)}
-                          aria-label={`Open goal: ${goal.overview}. ${progress}% complete.`}
-                          className="w-full text-left border border-[color:var(--border)] rounded-lg p-4 bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{goal.overview}</p>
-                              <p className="text-xs text-[color:var(--text-muted)] mt-0.5">
-                                {goal.createdAt}
+            {goalsLoading ? (
+              <p className="text-sm text-[color:var(--text-muted)]">Loading your goals…</p>
+            ) : !userId ? (
+              <p className="text-sm text-[color:var(--text-muted)]">Sign in to create and track goals.</p>
+            ) : (
+              <>
+                <section aria-labelledby="active-heading">
+                  <h2
+                    id="active-heading"
+                    className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-3"
+                  >
+                    Active goals ({activeGoals.length})
+                  </h2>
+                  {activeGoals.length === 0 ? (
+                    <div className="border border-dashed border-[color:var(--border)] rounded-lg p-8 text-center bg-[color:var(--surface)]">
+                      <p className="text-sm text-[color:var(--text-muted)]">
+                        No active goals yet. Use <span className="font-medium text-[color:var(--text)]">New goal</span> above to create one.
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-3 list-none">
+                      {activeGoals.map((goal) => {
+                        const progress =
+                          goal.checkedCriteria.length > 0
+                            ? Math.round(
+                                (goal.checkedCriteria.filter(Boolean).length /
+                                  goal.checkedCriteria.length) *
+                                  100
+                              )
+                            : 0;
+                        return (
+                          <li key={goal.id}>
+                            <button
+                              type="button"
+                              onClick={() => openGoalDetail(goal)}
+                              aria-label={`Open goal: ${goal.overview}. ${progress}% complete.`}
+                              className="w-full text-left border border-[color:var(--border)] rounded-lg p-4 bg-[color:var(--surface)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors"
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{goal.overview}</p>
+                                  <p className="text-xs text-[color:var(--text-muted)] mt-0.5">
+                                    {goal.createdAt}
+                                    {goal.streakDays > 0 && (
+                                      <span className="ml-2">
+                                        <span aria-hidden>🔥</span> {goal.streakDays}d
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                                <span className="text-sm font-medium shrink-0">{progress}%</span>
+                              </div>
+                              <div
+                                className="mt-3 w-full bg-[color:var(--surface-muted)] rounded-full h-1.5 overflow-hidden"
+                                role="progressbar"
+                                aria-valuenow={progress}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                              >
+                                <div
+                                  className="bg-[color:var(--accent)] h-1.5 rounded-full transition-all"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <p className="text-xs text-[color:var(--text-muted)] mt-2">
+                                {goal.checkedCriteria.filter(Boolean).length}/{goal.checkedCriteria.length} criteria met
                               </p>
-                            </div>
-                            <span className="text-sm font-medium shrink-0">{progress}%</span>
-                          </div>
-                          <div
-                            className="mt-3 w-full bg-[color:var(--surface-muted)] rounded-full h-1.5 overflow-hidden"
-                            role="progressbar"
-                            aria-valuenow={progress}
-                            aria-valuemin={0}
-                            aria-valuemax={100}
-                          >
-                            <div
-                              className="bg-[color:var(--accent)] h-1.5 rounded-full transition-all"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <p className="text-xs text-[color:var(--text-muted)] mt-2">
-                            {goal.checkedCriteria.filter(Boolean).length}/{goal.checkedCriteria.length} criteria met
-                          </p>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
 
-            {finishedGoals.length > 0 && (
-              <section aria-labelledby="finished-heading">
-                <h2
-                  id="finished-heading"
-                  className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-3"
-                >
-                  Completed goals ({finishedGoals.length})
-                </h2>
-                <ul className="space-y-3 list-none">
-                  {finishedGoals.map((goal) => (
-                    <li key={goal.id}>
-                      <button
-                        type="button"
-                        onClick={() => openGoalDetail(goal)}
-                        className="w-full text-left border border-[color:var(--border)] rounded-lg p-4 bg-[color:var(--surface-muted)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors"
-                      >
-                        <p className="font-medium truncate">{goal.overview}</p>
-                        <p className="text-xs text-[color:var(--text-muted)] mt-1">
-                          {goal.createdAt} · All criteria met
-                        </p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                {finishedGoals.length > 0 && (
+                  <section aria-labelledby="finished-heading">
+                    <h2
+                      id="finished-heading"
+                      className="text-xs font-semibold uppercase tracking-wider text-[color:var(--text-muted)] mb-3"
+                    >
+                      Completed goals ({finishedGoals.length})
+                    </h2>
+                    <ul className="space-y-3 list-none">
+                      {finishedGoals.map((goal) => (
+                        <li key={goal.id}>
+                          <button
+                            type="button"
+                            onClick={() => openGoalDetail(goal)}
+                            className="w-full text-left border border-[color:var(--border)] rounded-lg p-4 bg-[color:var(--surface-muted)] hover:border-[color:var(--border-strong)] focus-visible:border-[color:var(--border-strong)] transition-colors"
+                          >
+                            <p className="font-medium truncate">{goal.overview}</p>
+                            <p className="text-xs text-[color:var(--text-muted)] mt-1">
+                              {goal.createdAt} · All criteria met
+                              {goal.longestStreak > 0 && (
+                                <span className="ml-2">· Best streak {goal.longestStreak}d</span>
+                              )}
+                            </p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </>
             )}
           </div>
         )}

@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeJournalEntry, getEmbedding } from "@/lib/gemini";
 import { connectToDatabase } from "@/lib/mongodb";
+import { getUserContext, summarizeContextForPrompt } from "@/lib/userContext";
 import { ObjectId } from "mongodb";
 
+// E2EE storage model (documented in README):
+// - `ciphertext` + `iv` are encrypted client-side with a passphrase-derived AES-GCM key.
+//   The server never persists plaintext content.
+// - `content` is accepted on POST as TRANSIENT input — used for Gemini analysis and
+//   embedding only, then discarded. We do not log it.
+// - Analysis fields (mood, moodScore, validation, clarity, affirmation) and the
+//   embedding vector ARE stored unencrypted. This is an acknowledged trade-off:
+//   it preserves semantic search and dashboard insights at the cost of leaking
+//   coarse metadata. The raw entry content remains private.
 interface JournalDocument {
     _id?: ObjectId;
     userId: string;
-    content: string;
+    ciphertext: string;
+    iv: string;
     moodRating: number | null;
     mood: string;
     moodScore: number;
@@ -22,21 +33,25 @@ export async function POST(request: NextRequest) {
         const body = (await request.json()) as {
             userId: string;
             content: string;
+            ciphertext: string;
+            iv: string;
             moodRating?: number;
         };
 
-        const { userId, content, moodRating } = body;
+        const { userId, content, ciphertext, iv, moodRating } = body;
 
-        if (!userId || !content) {
+        if (!userId || !content || !ciphertext || !iv) {
             return NextResponse.json(
-                { error: "userId and content are required" },
+                { error: "userId, content, ciphertext, and iv are required" },
                 { status: 400 }
             );
         }
 
-        // Run AI analysis and embedding in parallel
+        const ctx = await getUserContext(userId).catch(() => null);
+        const contextSummary = ctx ? summarizeContextForPrompt(ctx) : undefined;
+
         const [analysis, embedding] = await Promise.all([
-            analyzeJournalEntry(content),
+            analyzeJournalEntry(content, contextSummary),
             getEmbedding(content),
         ]);
 
@@ -44,7 +59,8 @@ export async function POST(request: NextRequest) {
 
         const doc: Omit<JournalDocument, "_id"> = {
             userId,
-            content,
+            ciphertext,
+            iv,
             moodRating: moodRating ?? null,
             mood: analysis.mood,
             moodScore: analysis.moodScore,
@@ -55,7 +71,9 @@ export async function POST(request: NextRequest) {
             createdAt: new Date(),
         };
 
-        const result = await db.collection<Omit<JournalDocument, "_id">>("journals").insertOne(doc);
+        const result = await db
+            .collection<Omit<JournalDocument, "_id">>("journals")
+            .insertOne(doc);
 
         return NextResponse.json({
             success: true,
